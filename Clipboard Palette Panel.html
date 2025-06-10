@@ -1,0 +1,71 @@
+<!-- 📋 Clipboard Palette Panel -->
+<div class="panel" id="panelClipboard" style="left:560px;top:10px;">
+  <h3>📋 Clipboard Palette</h3>
+  <div id="clipboardSlots">
+    <button onclick="copyToSlot('slot1')">Copy ➜ Slot 1</button>
+    <div class="clipPreview" id="slot1Preview" style="margin-bottom: 8px;"></div>
+
+    <button onclick="copyToSlot('slot2')">Copy ➜ Slot 2</button>
+    <div class="clipPreview" id="slot2Preview" style="margin-bottom: 8px;"></div>
+
+    <button onclick="copyToSlot('slot3')">Copy ➜ Slot 3</button>
+    <div class="clipPreview" id="slot3Preview" style="margin-bottom: 8px;"></div>
+
+    <button onclick="copyToSlot('slot4')">Copy ➜ Slot 4</button>
+    <div class="clipPreview" id="slot4Preview" style="margin-bottom: 8px;"></div>
+  </div>
+</div>
+
+<script>
+// === 📁 Clipboard Storage ===
+let clipboardPalette = {
+  slot1: null,
+  slot2: null,
+  slot3: null,
+  slot4: null
+};
+
+// === 🎯 Selection Placeholder ===
+let currentSelection = []; // Replace with your actual selection logic
+
+// === 📋 Copy To Slot ===
+function copyToSlot(slotName) {
+  if (!currentSelection.length) {
+    alert("Select a region first.");
+    return;
+  }
+  clipboardPalette[slotName] = {
+    name: `Clip from ${new Date().toLocaleTimeString()}`,
+    type: "bones", // This can be switched depending on mode
+    nodes: currentSelection.map(n => ({ ...n })),
+    connections: getConnectionsFor(currentSelection)
+  };
+  drawClipboardPreview(slotName);
+}
+
+// === 🔍 Draw Preview (basic text) ===
+function drawClipboardPreview(slotName) {
+  const slot = clipboardPalette[slotName];
+  const container = document.getElementById(`${slotName}Preview`);
+  container.innerHTML = "";
+  if (!slot) return;
+
+  const title = document.createElement("div");
+  title.innerText = slot.name;
+  title.style.fontSize = "0.85em";
+  title.style.color = "#ccc";
+  container.appendChild(title);
+
+  const meta = document.createElement("div");
+  meta.innerText = `Type: ${slot.type}, Nodes: ${slot.nodes.length}`;
+  meta.style.fontSize = "0.75em";
+  meta.style.color = "#999";
+  container.appendChild(meta);
+}
+
+// === 🔗 Placeholder for Connection Extraction ===
+function getConnectionsFor(nodes) {
+  // Return connection pairs for bone groups, e.g., [[0,1],[1,2]]
+  return [];
+}
+</script>

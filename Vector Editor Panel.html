@@ -1,0 +1,93 @@
+<!-- === Vector Editor Panel === -->
+<div class="panel" id="vectorEditorPanel" style="left:850px;top:10px;">
+  <h3>🫱 Soft Vector Editor <button onclick="togglePanel('vectorEditorPanel')">[-]</button></h3>
+  <div class="content">
+    <label>Angle <input type="range" id="vec_angle" min="0" max="360" value="90"></label>
+    <label>Width <input type="range" id="vec_width" min="0" max="200" value="60"></label>
+    <label>Amplitude <input type="range" id="vec_amplitude" min="0" max="100" value="50"></label>
+    <label>Falloff <input type="range" id="vec_falloff" min="0" max="100" value="25"></label>
+    <label>Type
+      <select id="vec_type">
+        <option value="elastic">Elastic</option>
+        <option value="inertial">Inertial</option>
+        <option value="anchored">Anchored</option>
+      </select>
+    </label>
+    <label>Linked Joints:</label>
+    <div id="linkedJointsList"></div>
+    <button onclick="addLinkedJoint()">+ Add Joint</button>
+    <button onclick="applyVectorChanges()">✅ Apply</button>
+  </div>
+</div>
+
+<style>
+#vectorEditorPanel {
+  position: fixed;
+  background: rgba(20,20,30,0.95);
+  color: white;
+  padding: 10px;
+  z-index: 1000;
+  width: 220px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+#vectorEditorPanel input[type="range"],
+#vectorEditorPanel select {
+  width: 100%;
+}
+#vectorEditorPanel .jointEntry {
+  background: #333;
+  margin: 2px 0;
+  padding: 3px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>
+
+<script>
+let currentVector = {
+  angle: 90,
+  width: 60,
+  amplitude: 50,
+  falloff: 25,
+  type: "elastic",
+  linkedJoints: []
+};
+
+function applyVectorChanges() {
+  currentVector.angle = parseInt(document.getElementById('vec_angle').value);
+  currentVector.width = parseInt(document.getElementById('vec_width').value);
+  currentVector.amplitude = parseInt(document.getElementById('vec_amplitude').value);
+  currentVector.falloff = parseInt(document.getElementById('vec_falloff').value);
+  currentVector.type = document.getElementById('vec_type').value;
+  drawCanvas(); // refresh view
+}
+
+function addLinkedJoint() {
+  const jointId = prompt("Enter joint ID to link:");
+  if (!jointId) return;
+  currentVector.linkedJoints.push(jointId);
+  renderLinkedJoints();
+}
+
+function removeLinkedJoint(index) {
+  currentVector.linkedJoints.splice(index, 1);
+  renderLinkedJoints();
+}
+
+function renderLinkedJoints() {
+  const list = document.getElementById('linkedJointsList');
+  list.innerHTML = '';
+  currentVector.linkedJoints.forEach((jid, idx) => {
+    const div = document.createElement('div');
+    div.className = 'jointEntry';
+    div.innerHTML = `<span>🦴 ${jid}</span> <button onclick="removeLinkedJoint(${idx})">❌</button>`;
+    list.appendChild(div);
+  });
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderLinkedJoints();
+});
+</script>

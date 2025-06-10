@@ -1,0 +1,164 @@
+// ========== Clipboard Hotkeys ==========
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT") return; // Ignore input fields
+
+  let key = e.key;
+  let mirrored = e.shiftKey;
+  let flipped = e.ctrlKey || e.metaKey;
+
+  if (["1", "2", "3", "4"].includes(key)) {
+    let slot = "slot" + key;
+    if (clipboardPalette[slot]) {
+      pasteClipFromSlot(slot, { mirrored, flipped });
+      e.preventDefault();
+    }
+  }
+});
+
+// ========== Clipboard Paste Logic ==========
+function pasteClipFromSlot(slotName, { mirrored = false, flipped = false } = {}) {
+  let clip = clipboardPalette[slotName];
+  if (!clip) return;
+
+  let newNodes = clip.nodes.map(n => ({ ...n }));
+  const center = getCenterOfNodes(newNodes);
+
+  newNodes.forEach(n => {
+    if (mirrored) n.x = center.x - (n.x - center.x);
+    if (flipped)  n.y = center.y - (n.y - center.y);
+    n.x += 30;
+    n.y += 30;
+  });
+
+  newNodes.forEach(n => allNodes.push(n)); // Replace with your insertion logic
+  drawCanvas();
+}
+
+function getCenterOfNodes(nodes) {
+  const xs = nodes.map(n => n.x), ys = nodes.map(n => n.y);
+  return {
+    x: (Math.min(...xs) + Math.max(...xs)) / 2,
+    y: (Math.min(...ys) + Math.max(...ys)) / 2
+  };
+}
+
+// ========== Drag-to-Place Clipboard ==========
+let clipboardDragData = null;
+
+function enableClipboardDragging(slotName) {
+  const slot = clipboardPalette[slotName];
+  if (!slot) return;
+  clipboardDragData = {
+    slot,
+    offset: { x: 0, y: 0 }
+  };
+  canvas.addEventListener("mousemove", drawClipboardDragPreview);
+  canvas.addEventListener("mouseup", finalizeClipboardDrag);
+}
+
+function drawClipboardDragPreview(e) {
+  if (!clipboardDragData) return;
+  let mouse = getMouseReal(e);
+  drawCanvas();
+
+  ctx.save();
+  ctx.strokeStyle = "lime";
+  clipboardDragData.slot.nodes.forEach(n => {
+    ctx.beginPath();
+    ctx.arc(mouse.x + n.x, mouse.y + n.y, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function finalizeClipboardDrag(e) {
+  if (!clipboardDragData) return;
+  let mouse = getMouseReal(e);
+  let { slot } = clipboardDragData;
+  let newNodes = slot.nodes.map(n => ({
+    ...n,
+    x: mouse.x + n.x,
+    y: mouse.y + n.y
+  }));
+  newNodes.forEach(n => allNodes.push(n));
+  clipboardDragData = null;
+  canvas.removeEventListener("mousemove", drawClipboardDragPreview);
+  canvas.removeEventListener("mouseup", finalizeClipboardDrag);
+  drawCanvas();
+}
+
+// ========== Save/Load Clipboard Palette ==========
+function saveClipboardToStorage() {
+  localStorage.setItem("clipboardPalette", JSON.stringify(clipboardPalette));
+}
+
+function loadClipboardFromStorage() {
+  const saved = localStorage.getItem("clipboardPalette");
+  if (saved) clipboardPalette = JSON.parse(saved);
+  Object.keys(clipboardPalette).forEach(drawClipboardPreview);
+}
+
+// ========== Rename Slot Name ==========
+function renameSlot(slotName, newName) {
+  if (clipboardPalette[slotName]) {
+    clipboardPalette[slotName].name = newName;
+    drawClipboardPreview(slotName);
+  }
+}
+
+function initClipboardPanel() {
+  const panel = document.createElement("div");
+  panel.id = "clipboardPanel";
+  panel.className = "panel";
+  panel.style.left = "600px";
+  panel.style.top = "10px";
+  panel.innerHTML = `
+    <h3>📋 Clipboard Palette <button onclick="togglePanel('clipboardPanel')">[-]</button></h3>
+    <div class="content" id="clipboardSlots">
+      ${["slot1", "slot2", "slot3", "slot4"].map(slot =>
+        `<div class="clipSlot" id="${slot}">
+          <b>${slot}</b>
+          <input type="text" placeholder="Name" onchange="renameSlot('${slot}', this.value)">
+          <button onclick="enableClipboardDragging('${slot}')">Drag</button>
+          <button onclick="pasteClipFromSlot('${slot}')">Paste</button>
+          <span class="hotkey">[${slot.slice(-1)}]</span>
+        </div>`).join('')}
+      <hr/>
+      <button onclick="saveClipboardToStorage()">💾 Save</button>
+      <button onclick="loadClipboardFromStorage()">📂 Load</button>
+    </div>`;
+  document.body.appendChild(panel);
+}
+
+
+#clipboardPanel {
+  position: fixed;
+  background: rgba(40, 40, 50, 0.95);
+  color: white;
+  padding: 10px;
+  border-radius: 6px;
+  z-index: 999;
+  width: 220px;
+  font-size: 12px;
+}
+#clipboardPanel .clipSlot {
+  border: 1px solid #333;
+  margin: 6px 0;
+  padding: 4px;
+  background: #222;
+}
+#clipboardPanel input[type="text"] {
+  width: 100%;
+  margin-top: 4px;
+}
+#clipboardPanel .hotkey {
+  float: right;
+  font-size: 10px;
+  color: #888;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  initClipboardPanel();
+  loadClipboardFromStorage();
+});
+

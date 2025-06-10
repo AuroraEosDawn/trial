@@ -1,0 +1,24 @@
+<script>
+let draggingJoint = null;
+canvas.addEventListener('mousedown', e => {
+  const pos = toRealCoords({ x: e.offsetX, y: e.offsetY });
+  if (document.getElementById("editMetaGroup").checked) {
+    for (let [name, joint] of Object.entries(joints)) {
+      if (Math.hypot(joint.x - pos.x, joint.y - pos.y) < 8) {
+        draggingJoint = name;
+        break;
+      }
+    }
+  }
+});
+canvas.addEventListener('mousemove', e => {
+  if (draggingJoint && document.getElementById("editMetaGroup").checked) {
+    const pos = toRealCoords({ x: e.offsetX, y: e.offsetY });
+    joints[draggingJoint].x = pos.x;
+    joints[draggingJoint].y = pos.y;
+    drawCanvas();
+  }
+});
+canvas.addEventListener('mouseup', () => draggingJoint = null);
+canvas.addEventListener('mouseleave', () => draggingJoint = null);
+</script>
